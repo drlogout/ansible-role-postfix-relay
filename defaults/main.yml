@@ -9,6 +9,9 @@ postfix_relay_smtp_port: 587
 
 postfix_relay_hostname: "{{ inventory_hostname }}"
 
+# From name in mail header
+postfix_relay_from_name : "{{ inventory_hostname }}"
+
 # Rewrite local receipients
 postfix_relay_receipient_mappings: []
 
@@ -19,3 +22,5 @@ postfix_relay_receipient_mappings: []
 postfix_relay_forward_aliases: []
 
 postfix_relay_skip_install: false
+
+postfix_relay_set_install_mark: false

@@ -87,3 +87,8 @@
     name: postfix
     state: started
     enabled: yes
+
+- file:
+    path: /ansible/postfix-relay.installed
+    state: touch
+  when: postfix_relay_set_install_mark == true
