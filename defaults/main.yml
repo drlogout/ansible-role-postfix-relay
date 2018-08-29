@@ -1,0 +1,21 @@
+---
+# defaults file for ansible-role-postfix-relay
+
+# SMTP credentials
+#postfix_relay_smtp_host: ""
+postfix_relay_smtp_port: 587
+#postfix_relay_smtp_user: ""
+#postfix_relay_smtp_password: ""
+
+postfix_relay_hostname: "{{ inventory_hostname }}"
+
+# Rewrite local receipients
+postfix_relay_receipient_mappings: []
+
+# Who should receive root's email?
+#postfix_relay_root_forward: user@example.com
+
+# Additional users whose email should be forwarded to postfix_relay_root_forward
+postfix_relay_forward_aliases: []
+
+postfix_relay_skip_install: false

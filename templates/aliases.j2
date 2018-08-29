@@ -1,0 +1,6 @@
+# See man 5 aliases for format
+postmaster: root
+{% for alias in postfix_relay_forward_aliases %}
+{{ alias }}: root
+{% endfor %}
+root: {{ postfix_relay_root_forward }}

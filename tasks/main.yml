@@ -1,0 +1,89 @@
+---
+# tasks file for ansible-role-postfix-relay
+
+- name: Install postfix
+  apt:
+    name: postfix
+    state: present
+    update_cache: yes
+    cache_valid_time: 86400
+  when: postfix_relay_skip_install == false
+
+- name: Set myhostname in /etc/postfix/main.cf
+  lineinfile:
+    dest: /etc/postfix/main.cf
+    regexp: '^myhostname'
+    line: "myhostname = {{ postfix_relay_hostname }}"
+    
+- name: Set smtp credentials in /etc/postfix/sasl_passwd
+  lineinfile:
+    dest: /etc/postfix/sasl_passwd
+    create: yes
+    state: present
+    line: "[{{ postfix_relay_smtp_host }}]:{{ postfix_relay_smtp_port }} {{ postfix_relay_smtp_user }}:{{ postfix_relay_smtp_password }}"
+    group: root
+    owner: root
+    mode: 0600
+
+- name: Run postmap on /etc/postfix/sasl_passwd
+  command: postmap /etc/postfix/sasl_passwd
+
+- name: Secure /etc/postfix/sasl_passwd
+  file:
+    path: /etc/postfix/sasl_passwd.db
+    group: root
+    owner: root
+    mode: 0600
+
+- name: Update settings in /etc/postfix/main.cf
+  lineinfile:
+    dest: /etc/postfix/main.cf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - {regexp: '^relayhost', line: "relayhost = [{{ postfix_relay_smtp_host }}]:{{ postfix_relay_smtp_port }}"}
+    - {regexp: '^smtp_sasl_auth_enable', line: "smtp_sasl_auth_enable = yes"}
+    - {regexp: '^smtp_sasl_security_options', line: "smtp_sasl_security_options = noanonymous"}
+    - {regexp: '^smtp_sasl_password_map', line: "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd"}
+    - {regexp: '^smtp_use_tls', line: "smtp_use_tls = yes"}
+    - {regexp: '^smtp_tls_CAfile', line: "smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt"}
+    - {regexp: '^sender_canonical_classes', line: "sender_canonical_classes = envelope_sender, header_sender"}
+    - {regexp: '^sender_canonical_maps', line: "sender_canonical_maps =  regexp:/etc/postfix/sender_canonical_maps"}
+    - {regexp: '^smtp_header_checks', line: "smtp_header_checks = regexp:/etc/postfix/header_check"}
+    - {regexp: '^recipient_canonical_maps', line: "recipient_canonical_maps = hash:/etc/postfix/recipient_canonical_maps"}
+
+- name: Upload /etc/postfix/sender_canonical_maps|header_check|recipient_canonical_maps
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/postfix/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - sender_canonical_maps
+    - header_check
+    - recipient_canonical_maps
+
+- name: Run postmap on /etc/postfix/sender_canonical_maps|header_check|recipient_canonical_maps
+  command: "postmap /etc/postfix/{{ item }}"
+  with_items:
+    - sender_canonical_maps
+    - header_check
+    - recipient_canonical_maps
+
+- name: Upload /etc/aliases
+  template:
+    src: aliases.j2
+    dest: /etc/aliases
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Run newaliases
+  command: newaliases
+
+- name: Ensure Postfix has started and will start on reboot
+  service:
+    name: postfix
+    state: started
+    enabled: yes
