@@ -89,6 +89,6 @@
     enabled: yes
 
 - file:
-    path: /ansible/postfix-relay.installed
+    path: /usr/local/var/installed.postfix
     state: touch
   when: postfix_relay_set_install_mark == true
