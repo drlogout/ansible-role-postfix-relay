@@ -88,7 +88,5 @@
     state: started
     enabled: yes
 
-- file:
-    path: /usr/local/var/installed.postfix
-    state: touch
+- shell: echo 'installed' > /var/www/html/.postfix-relay.log
   when: postfix_relay_set_install_mark == true
